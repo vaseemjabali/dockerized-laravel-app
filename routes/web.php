@@ -21,3 +21,4 @@ $togo = DB::select('select * from places where visited = ?', [0]);
 
 return view('travel_list', ['visited' => $visited, 'togo' => $togo ] );
 });
+
