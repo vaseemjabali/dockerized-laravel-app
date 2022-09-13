@@ -16,11 +16,3 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::get('/test', function () {
-    return 'Docker is working fine';
-});
-
-Route::get('/demo', function () {
-    return 'Demo on jan 17';
-});

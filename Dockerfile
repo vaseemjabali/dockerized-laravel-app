@@ -1,60 +1,64 @@
-FROM php:8.0.5-fpm-alpine
+FROM ubuntu:18.04
+ENV DEBIAN_FRONTEND noninteractive
 
-WORKDIR  /var/www
+ARG PHP_VERSION=7.4
 
-RUN apk update && apk add \
-    build-base \
-    freetype-dev \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    libzip-dev \
+ENV PHP_VERSION ${PHP_VERSION}
+
+RUN apt-get update && \
+    apt-get -y upgrade && \
+    apt-get install -y software-properties-common && \
+    LC_ALL=C.UTF-8 add-apt-repository -y -u ppa:ondrej/php && \
+    apt-get install -y \
+    php${PHP_VERSION} \
+    php${PHP_VERSION}-fpm \
+    php${PHP_VERSION}-mysql \
+    mcrypt \
+    php${PHP_VERSION}-gd \
+    php${PHP_VERSION}-xml \
+    php${PHP_VERSION}-gmp \
+    curl \
     zip \
+    php${PHP_VERSION}-zip \
+    php${PHP_VERSION}-curl \
+    php${PHP_VERSION}-redis \
+    php${PHP_VERSION}-mbstring \
+    php${PHP_VERSION}-xml \
+    php${PHP_VERSION}-opcache \
+    php${PHP_VERSION}-bcmath \
+    openssl \
+    nginx \
     vim \
-    unzip \
-    git \
-    jpegoptim optipng pngquant gifsicle \
-    curl     
+    supervisor && \
+    rm -fr /var/lib/apt/lists/*
 
+RUN /usr/sbin/phpenmod mcrypt
 
-RUN docker-php-ext-install pdo_mysql zip exif pcntl
-RUN docker-php-ext-configure gd  --with-freetype=/usr/include/ --with-jpeg=/usr/include/ 
-RUN docker-php-ext-install gd
+RUN usermod -u 1000 www-data && groupmod -g 1000 www-data
 
+RUN rm -f /etc/nginx/nginx.conf
+RUN rm -f /etc/nginx/sites-enabled/default
+ADD . /var/www/app
+ADD ./docker/nginx /etc/nginx
 
-RUN apk add autoconf && pecl install -o -f redis \
-&& rm -rf /tmp/pear \
-&& docker-php-ext-enable redis && apk del autoconf
+WORKDIR /var/www/app
 
-COPY ./config/php/local.ini /usr/local/etc/php/conf.d/local.ini
+RUN chown -R www-data:www-data /var/www/app
 
-RUN addgroup -g 655 -S www && \
-    adduser -u 655 -S www -G www
+RUN mkdir /run/php
 
-# Copy existing application directory contents
-COPY . /var/www
+COPY docker/php/laravel.conf /etc/php/${PHP_VERSION}/fpm/pool.d/laravel.conf
+COPY docker/php/php${PHP_VERSION}.ini /etc/php/${PHP_VERSION}/fpm/php.ini
 
-# Copy existing application directory permissions
-COPY --chown=www:www . /var/www
+RUN rm /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
 
- RUN chown -R www:www /var/www/storage
- RUN chmod -R 777 /var/www/storage
- RUN chmod -R 777 storage bootstrap/cache
- RUN chmod -R 777 ./
+RUN sed -i -e 's/;daemonize = yes/daemonize = no/g' /etc/php/${PHP_VERSION}/fpm/php-fpm.conf
 
-# Change current user to www
-USER www
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
-CMD ["php-fpm"]
+RUN sed -i "s/#PHP_VERSION#/${PHP_VERSION}/g" /etc/supervisor/conf.d/supervisord.conf
 
+RUN chown -R www-data:www-data /var/log/supervisor/ &&\
+    chown -R www-data:www-data /etc/nginx/
 
-# COPY --chown=www:www-data . /var/www
-
-# RUN chown -R www:www /var/www/storage
-# RUN chmod -R 777 /var/www/storage
-
-# USER www
-
-# EXPOSE 9000
-# CMD ["php-fpm"]
+CMD ["/bin/bash", "./docker/entrypoint.sh"]
