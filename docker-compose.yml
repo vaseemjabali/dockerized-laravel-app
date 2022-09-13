@@ -1,49 +1,43 @@
-version: "3.7"
+version: "3"
 services:
   app:
     build:
-      args:
-        user: sammy
-        uid: 1000
-      context: ./
+      context: .
       dockerfile: Dockerfile
-    image: docker-aws
-    container_name: docker-aws-app
-    restart: unless-stopped
-    working_dir: /var/www/
-    volumes:
-      - ./:/var/www
-    networks:
-      - docker-aws
-
-  db:
-    image: mysql:8.0
-    container_name: docker-aws-db
+    image: larvel-app
+    container_name: app
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
-    volumes:
-      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
-    networks:
-      - docker-aws
-
-  nginx:
-    image: nginx:alpine
-    container_name: docker-aws-nginx
-    restart: unless-stopped
-    ports:
-      - 8000:80
+      DB_HOST: db
+      DB_PASSWORD: root
     volumes:
       - ./:/var/www
-      - ./docker-compose/nginx:/etc/nginx/conf.d/
-    networks:
-      - docker-aws
+      - ./config/php/local.ini:/usr/local/etc/php/conf.d/local.ini
 
-networks:
-  docker-aws:
-    driver: bridge
+  webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile_Nginx
+    image: larvel-nginx 
+    container_name: webserver 
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./config/nginx/conf.d/:/etc/nginx/conf.d
+    depends_on:
+      - app  
+
+  db:
+    image: mysql:5.7.22
+    container_name: db
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - dbdata:/var/lib/mysql/
+
+volumes:
+  dbdata:   
+    driver: local 

@@ -1,34 +1,60 @@
-FROM php:7.4-fpm
+FROM php:8.0.5-fpm-alpine
 
-# Arguments defined in docker-compose.yml
-ARG user
-ARG uid
+WORKDIR  /var/www
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
+RUN apk update && apk add \
+    build-base \
+    freetype-dev \
     libpng-dev \
-    libonig-dev \
-    libxml2-dev \
+    libjpeg-turbo-dev \
+    libzip-dev \
     zip \
-    unzip
+    vim \
+    unzip \
+    git \
+    jpegoptim optipng pngquant gifsicle \
+    curl     
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql zip exif pcntl
+RUN docker-php-ext-configure gd  --with-freetype=/usr/include/ --with-jpeg=/usr/include/ 
+RUN docker-php-ext-install gd
 
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Create system user to run Composer and Artisan Commands
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user
+RUN apk add autoconf && pecl install -o -f redis \
+&& rm -rf /tmp/pear \
+&& docker-php-ext-enable redis && apk del autoconf
 
-# Set working directory
-WORKDIR /var/www
+COPY ./config/php/local.ini /usr/local/etc/php/conf.d/local.ini
 
-USER $user
+RUN addgroup -g 655 -S www && \
+    adduser -u 655 -S www -G www
+
+# Copy existing application directory contents
+COPY . /var/www
+
+# Copy existing application directory permissions
+COPY --chown=www:www . /var/www
+
+ RUN chown -R www:www /var/www/storage
+ RUN chmod -R 777 /var/www/storage
+ RUN chmod -R 777 storage bootstrap/cache
+ RUN chmod -R 777 ./
+
+# Change current user to www
+USER www
+
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+CMD ["php-fpm"]
+
+
+# COPY --chown=www:www-data . /var/www
+
+# RUN chown -R www:www /var/www/storage
+# RUN chmod -R 777 /var/www/storage
+
+# USER www
+
+# EXPOSE 9000
+# CMD ["php-fpm"]
