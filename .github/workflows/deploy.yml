@@ -1,4 +1,3 @@
-          
 on:
   push:
     branches:
@@ -43,10 +42,17 @@ jobs:
       - name: Docker build
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
+          ECR_REPOSITORY: reponame
+          IMAGE_TAG: latest
         run: |
-          docker build -t $ECR_REGISTRY/conference:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/conference:$IMAGE_TAG
+          docker-compose build
+          docker tag larvel-docker-aws-nginx:latest $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
+          docker tag larvel-docker-aws-app:latest $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
+          docker push $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
+          docker push $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
+          echo "setting output values"
+          echo "::set-output name=appimage::$ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG"
+          echo "::set-output name=webimage::$ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG"
 
       - name: Download task def
         run: |
