@@ -4,8 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: larvel-app
-    container_name: app
+    image: larvel-docker-aws-app
+    container_name: larvel-docker-aws-app-container
     restart: unless-stopped
     environment:
       DB_HOST: db
@@ -18,8 +18,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_Nginx
-    image: larvel-nginx 
-    container_name: webserver 
+    image: larvel-docker-aws-nginx 
+    container_name: larvel-docker-aws-app-nginx 
     restart: unless-stopped
     ports:
       - "8080:80"
