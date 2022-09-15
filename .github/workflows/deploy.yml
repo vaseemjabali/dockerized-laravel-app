@@ -43,11 +43,11 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: reponame
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker-compose build
-          docker tag larvel-docker-aws-nginx:latest $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
-          docker tag larvel-docker-aws-app:latest $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
+          docker tag larvel-docker-aws-nginx:$IMAGE_TAG $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
+          docker tag larvel-docker-aws-app:$IMAGE_TAG $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
           docker push $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
           docker push $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
           echo "setting output values"
