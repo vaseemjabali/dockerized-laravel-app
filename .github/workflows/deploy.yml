@@ -46,13 +46,10 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker-compose build
-          docker tag larvel-docker-aws-nginx:$IMAGE_TAG $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
-          docker tag larvel-docker-aws-app:$IMAGE_TAG $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
-          docker push $ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG
-          docker push $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
-          echo "setting output values"
-          echo "::set-output name=appimage::$ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG"
-          echo "::set-output name=webimage::$ECR_REGISTRY/larvel-docker-aws-nginx:$IMAGE_TAG"
+          docker tag laravel-docker-aws-app:latest 442976946845.dkr.ecr.ap-south-1.amazonaws.com/laravel-docker-aws-app:latest
+          docker tag laravel-docker-aws-nginx:latest 442976946845.dkr.ecr.ap-south-1.amazonaws.com/laravel-docker-aws-nginx:latest          docker tag larvel-docker-aws-app:$IMAGE_TAG $ECR_REGISTRY/larvel-docker-aws-app:$IMAGE_TAG
+          docker push 442976946845.dkr.ecr.ap-south-1.amazonaws.com/laravel-docker-aws-app:latest
+          docker push 442976946845.dkr.ecr.ap-south-1.amazonaws.com/laravel-docker-aws-nginx:latest
 
       - name: Download task def
         run: |
